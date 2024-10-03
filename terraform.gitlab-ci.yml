@@ -1,0 +1,40 @@
+image: sikalabs/ci
+
+stages:
+  - validate
+  - plan
+  - apply
+
+variables:
+  GIT_CLEAN_FLAGS: -ffdx -e .terraform
+  TF_ADDRESS: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/default
+
+before_script:
+  - gitlab-terraform init -upgrade
+
+validate:
+  stage: validate
+  script:
+    - gitlab-terraform validate
+
+plan:
+  stage: plan
+  script:
+    - gitlab-terraform plan
+    - gitlab-terraform plan-json
+  artifacts:
+    name: plan
+    paths:
+      - plan.cache
+    reports:
+      terraform: plan.json
+
+apply:
+  stage: apply
+  when: manual
+  allow_failure: false
+  script:
+    - gitlab-terraform apply
+  only:
+    - master
+    - main
